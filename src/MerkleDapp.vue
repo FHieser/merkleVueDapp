@@ -207,7 +207,13 @@ export default {
       this.checkIfWalletIsConnected();
       
       if (this.currentAccount == null) {
-        return;
+        //Try to connect Wallet
+        this.connectWallet();
+
+        //if it still is not connected don´t do anything
+        if (this.currentAccount == null) {
+          return;
+        }
       } else {
         try {
           const provider = new ethers.providers.Web3Provider(window.ethereum);
