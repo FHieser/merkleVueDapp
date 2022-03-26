@@ -1,76 +1,75 @@
 <template>
-  <div id="app" class="container">
-    <div class="header">
-      <div class="logo">
-        <img
-          class="mainLogo"
-          src="./assets/8Bit/8BitLogo.svg"
-          alt="BitBots Logo"
-        />
-      </div>
-      <v-spacer />
-      <div class="links">
-        <div class="homepage link">Homepage</div>
-        <div class="discord link">
-          <a href="https://discord.com/"
-            ><img src="./assets/logos/DiscordLogo.svg" alt="Discord"
-          /></a>
+  <v-app>
+    <div id="app" class="container">
+      <div class="header">
+        <div class="logo">
+          <img
+            class="mainLogo"
+            src="./assets/8Bit/8BitLogo.svg"
+            alt="BitBots Logo"
+          />
         </div>
-        <div class="twitter link">
-          <a href="https://twitter.com/"
-            ><img src="./assets/logos/TwitterLogo.svg" alt="Twitter"
-          /></a>
-        </div>
-        <div class="opensea link">
-          <a href="https://opensea.io/">
-            <img src="./assets/logos/OpenSeaLogo.svg" alt="OpenSea" />
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="alertHolder">
-      <v-alert
-        width="40rem"
-        v-model="alertActive"
-        border="left"
-        colored-border
-        type="error"
-        elevation="2"
-        dismissible
-        transition="scroll-x-transition"
-        :timeout="3000"
-      >
-        {{ alertText }}
-      </v-alert>
-    </div>
-
-    <div class="content">
-      <div class="leftImage contentImage">
-        <img src="./assets/8Bit/BitsToTheRight.gif" alt="Bits To the right" />
-      </div>
-      <div class="mintSection">
-        <label for="" class="supply"
-          >{{ boughtSupply }}/{{ totalSupply }}</label
-        >
-        <div class="mintAmountArea">
-          <v-btn class="decrementBtn" @click="decrement">-</v-btn>
-          <div class="mintAmount">
-            <label>{{ mintAmount }}</label>
+        <v-spacer />
+        <div class="links">
+          <div class="homepage link">Homepage</div>
+          <div class="discord link">
+            <a href="https://discord.com/"
+              ><img src="./assets/logos/DiscordLogo.svg" alt="Discord"
+            /></a>
           </div>
-
-          <v-btn class="incrementBtn" @click="increment">+</v-btn>
+          <div class="twitter link">
+            <a href="https://twitter.com/"
+              ><img src="./assets/logos/TwitterLogo.svg" alt="Twitter"
+            /></a>
+          </div>
+          <div class="opensea link">
+            <a href="https://opensea.io/">
+              <img src="./assets/logos/OpenSeaLogo.svg" alt="OpenSea" />
+            </a>
+          </div>
         </div>
-        <v-btn class="mintBtn" @click="mint">{{ mintButtonText }}</v-btn>
       </div>
-      <div class="rightImage contentImage">
-        <img src="./assets/8Bit/BitsToTheLeft.gif" alt="Bits To the left" />
+
+      <div class="alertHolder">
+        <v-alert
+          width="40rem"
+          v-model="alertActive"
+          border="left"
+          colored-border
+          type="error"
+          elevation="2"
+          dismissible
+          transition="scroll-x-transition"
+          :timeout="3000"
+        >
+          {{ alertText }}
+        </v-alert>
+      </div>
+
+      <div class="content">
+        <div class="leftImage contentImage">
+          <img src="./assets/8Bit/BitsToTheRight.gif" alt="Bits To the right" />
+        </div>
+        <div class="mintSection">
+          <label for="" class="supply"
+            >{{ boughtSupply }}/{{ totalSupply }}</label
+          >
+          <div class="mintAmountArea">
+            <v-btn class="decrementBtn" @click="decrement">-</v-btn>
+            <div class="mintAmount">
+              <label>{{ mintAmount }}</label>
+            </div>
+
+            <v-btn class="incrementBtn" @click="increment">+</v-btn>
+          </div>
+          <v-btn class="mintBtn" @click="mint">{{ mintButtonText }}</v-btn>
+        </div>
+        <div class="rightImage contentImage">
+          <img src="./assets/8Bit/BitsToTheLeft.gif" alt="Bits To the left" />
+        </div>
       </div>
     </div>
-    <div class="infoBox">
-      <div class="gasInfo">Gas Limit: {{ gasLimit }}</div>
-    </div>
-  </div>
+  </v-app>
 </template>
 
 
@@ -98,7 +97,7 @@ export default {
       boughtSupply: 0,
 
       mintAmount: 1,
-      maxmintAmount: 20,
+      maxmintAmount: 10,
 
       mintCost: 0.01,
       gasLimit: 400000,
@@ -196,8 +195,13 @@ export default {
           return;
         }
 
-        let val = await getContract(provider).totalSupply();
-        this.boughtSupply = val;
+        this.mintAmount = 1;
+
+        //Fetch contract Data
+        this.boughtSupply = await getContract(provider).totalSupply();
+        this.totalSupply = await getContract(provider).maxSupply();
+        this.maxmintAmount = await getContract(provider).maxMintAmount();
+        this.mintCost = await getContract(provider).cost();
       } catch (error) {
         console.log(error);
       }
@@ -205,7 +209,7 @@ export default {
 
     mint: async function () {
       this.checkIfWalletIsConnected();
-      
+
       if (this.currentAccount == null) {
         //Try to connect Wallet
         this.connectWallet();
@@ -233,9 +237,7 @@ export default {
           const signer = provider.getSigner();
           const contractWithSigner = contract.connect(signer);
           /* global BigInt */
-          var cost = BigInt(
-            this.mintAmount * this.mintCost * 1000000000000000000
-          );
+          var cost = BigInt(this.mintAmount * this.mintCost.toString());
           var options = { gasLimit: this.gasLimit, value: cost };
           console.log(options);
 
@@ -268,10 +270,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
 @font-face {
   font-family: Pixeled;
-  src: local("Pixeled"),url(./fonts/Pixeled.ttf) format("truetype");
+  src: local("Pixeled"), url(./fonts/Pixeled.ttf) format("truetype");
 }
 
 .container {
